@@ -1,92 +1,113 @@
 #!/bin/bash
 
-    set -eu -o pipefail # fail on error , debug all lines
+# Fail on error , debug all lines
+set -eu -o pipefail
 
-    TEXT_RESET='\e[0m'
-    TEXT_YELLOW='\e[0;33m'
-    TEXT_RED_B='\e[1;31m'
-    FOLD1='/dev/'
+# Some color for text
+TEXT_RESET='\e[0m'
+TEXT_YELLOW='\e[0;33m'
+TEXT_RED_B='\e[1;31m'
+TEXT_GREEN='\e[0;32m'
 
-    sudo -n true
-    test $? -eq 0 || exit 1 "you should have sudo priveledge to run this script"
+FOLD1='/dev/'
 
-    clear
-
-    function hd_conf {
-       drive=$drive"1"
-       #umount $drive &> /dev/null
-       #sudo mkfs.ext4 $drive -L BITCOIN
-       PARTUUID="$(blkid -o value -s PARTUUID $drive)"
-       BTCDIR=$HOME"/.bitcoin"
-       #mkdir $BTCDIR
-       echo "PARTUUID=$PARTUUID  $BTCDIR  ext4  defaults,noatime  0    0" >> /etc/fstab
-       sudo mount -a
-    }
-
-    function hd_detect {
-       drive_find="$(lsblk -dlnb | awk '$4>=193273528320' | numfmt --to=iec --field=4 | cut -c1-3)"
-       drive=$FOLD1$drive_find
-       drive_size="$(df -h $drive | sed 1d |  awk '{print $2}')"
-           while true; do
-               read -p "$drive_size $drive will be formatted. Are you agree? " yn
-               case $yn in
-                   [Yy]* ) hd_conf;break;;
-                   [Nn]* ) echo "This script needs to format an entire hard disk.";exit;;
-                   * ) echo "Please answer yes or no.";;
-               esac
-           done
-    }
-
-    while true; do
-        read -p "Is the hard drive connected? (We assume 1 Partition)" yn
-        case $yn in
-            [Yy]* ) HD_CONFIG=1;break;;
-            [Nn]* ) echo "Please connect an USB hard drive an retry";exit;;
-            * ) echo "Please answer yes or no.";;
-        esac
-    done
-    
-     while true; do
-        read -p "Will you use a pendrive for SWAP?" yn
-        case $yn in
-            [Yy]* ) SWAP_CONFIG=1;break;;
-            [Nn]* ) echo "SWAP will be set on external Hard Disk";SWAP_CONFIG=0;exit;;
-            * ) echo "Please answer yes or no.";;
-        esac
-    done
-
-    echo -e $TEXT_YELLOW
-    echo "Script will begin the installation, take a rest."
-
-    echo updating Raspberry
-    sudo apt-get update
-    echo -e $TEXT_YELLOW
-    echo 'APT update finished...'
+# Check if script has privileges
+if [ "$(id -u)" -ne 0 ]; then
+    echo -e $TEXT_RED_B
+    echo "Please run this script with sudo" >&2
     echo -e $TEXT_RESET
-    sudo apt-get -y dist-upgrade
+    exit 1
+fi
+
+# Clean the screen
+clear
+
+function hd_conf {
+   drive=$drive"1"
+   #umount $drive &> /dev/null
+   #sudo mkfs.ext4 $drive -L BITCOIN
+   PARTUUID="$(blkid -o value -s PARTUUID $drive)"
+   BTCDIR=$HOME"/.bitcoin"
+   #mkdir $BTCDIR
+   echo "PARTUUID=$PARTUUID  $BTCDIR  ext4  defaults,noatime  0    0" >> /etc/fstab
+   sudo mount -a
+}
+
+function hd_detect {
+   drive_find="$(lsblk -dlnb | awk '$4>=193273528320' | numfmt --to=iec --field=4 | cut -c1-3)"
+   drive=$FOLD1$drive_find
+   drive_size="$(df -h $drive | sed 1d |  awk '{print $2}')"
+       while true; do
+           echo -e $TEXT_RED_B
+           read -p "$drive_size $drive will be formatted. Are you agree? " yn
+           case $yn in
+               [Yy]* ) DRIVE_CONF=true;break;;
+               [Nn]* ) echo "This script needs to format an entire hard disk.";exit;;
+               * ) echo "Please answer yes or no.";;
+           esac
+	   echo -e $TEXT_RESET
+       done
+}
+
+# Do we have an external hard drive?
+while true; do
     echo -e $TEXT_YELLOW
-    echo 'APT distributive upgrade finished...'
+    read -p "Is the hard drive connected? (We assume 1 Partition)" yn
+    case $yn in
+        [Yy]* ) hd_detect;break;; #If we have HD_CONFIG value says to configure it.
+        [Nn]* ) echo "Please connect an USB hard drive an retry";exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
     echo -e $TEXT_RESET
-    sudo apt-get -y upgrade
+done
+
+# Do we have a pendrive for SWAP?
+while true; do
     echo -e $TEXT_YELLOW
-    echo 'APT upgrade finished...'
+    read -p "Will you use a pendrive for SWAP?" yn
+    case $yn in
+        [Yy]* ) SWAP_CONFIG=1;break;; #If we have SWAP_CONFIG value says to configure it.
+        [Nn]* ) echo "SWAP will be set on external Hard Disk";SWAP_CONFIG=0;break;; #else we configure swap in the external hard drive.
+        * ) echo "Please answer yes or no.";;
+    esac
     echo -e $TEXT_RESET
-    sudo apt-get -y autoremove
-    echo -e $TEXT_YELLOW
-    echo 'APT auto remove finished...'
+done
+
+echo -e $TEXT_GREEN
+echo "Script will begin the installation, take a rest."
+echo "____________________________________________________"
+echo -e $TEXT_YELLOW
+echo "Updating Raspberry"
+echo -e $TEXT_RESET
+sudo apt-get update
+echo -e $TEXT_GREEN
+echo "APT update finished..."
+echo -e $TEXT_RESET
+sudo apt-get -y dist-upgrade
+echo -e $TEXT_GREEN
+echo "APT distributive upgrade finished..."
+echo -e $TEXT_RESET
+sudo apt-get -y upgrade
+echo -e $TEXT_GREEN
+echo "APT upgrade finished..."
+echo -e $TEXT_RESET
+sudo apt-get -y autoremove
+echo -e $TEXT_GREEN
+echo "APT auto remove finished..."
+echo -e $TEXT_RESET
+
+if [ -f /var/run/reboot-required ]; then
+    echo -e $TEXT_RED_B
+    echo "Reboot required!"
     echo -e $TEXT_RESET
+fi
 
-    if [ -f /var/run/reboot-required ]; then
-        echo -e $TEXT_RED_B
-        echo 'Reboot required!'
-        echo -e $TEXT_RESET
-    fi
+echo -e $TEXT_YELLOW
+echo "Installing prerequisites"
+echo -e $TEXT_RESET
+sudo apt-get install -y autoconf automake build-essential git libtool libgmp-dev libsqlite3-dev python python3 net-tools tmux
+echo -e $TEXT_GREEN
+echo "Prerequisites installed"
+echo -e $TEXT_RESET
 
-    echo installing pre-requisites
-    sudo apt-get install -y autoconf automake build-essential git libtool libgmp-dev libsqlite3-dev python python3 net-tools tmux
-
-    if ["$HD_CONFIG" -eq "1"]; then
-       hd_detect
-    fi
-
-    if [
+# Configure external hard drive
