@@ -23,14 +23,24 @@ fi
 clear
 
 function hd_conf {
-   drive=$drive"1"
-   #umount $drive &> /dev/null
-   #sudo mkfs.ext4 $drive -L BITCOIN
-   PARTUUID="$(blkid -o value -s PARTUUID $drive)"
-   BTCDIR=$HOME"/.bitcoin"
-   #mkdir $BTCDIR
-   echo "PARTUUID=$PARTUUID  $BTCDIR  ext4  defaults,noatime  0    0" >> /etc/fstab
-   sudo mount -a
+    drive=$drive"1"
+    umount $drive &> /dev/null
+    echo -e $TEXT_YELLOW
+    echo "Formatting hard disk"
+    sudo mkfs.ext4 $drive -L BITCOIN
+    echo -e $TEXT_GREEN
+    echo "Hard disk formatted"
+    PARTUUID="$(blkid -o value -s PARTUUID $drive)"
+    echo  -e $TEXT_YELLOW
+    echo "Creating Bitcoin data folder"
+    BTCDIR=$HOME"/.bitcoin"
+    mkdir $BTCDIR
+    echo "Modifying fstab"
+    echo "PARTUUID=$PARTUUID  $BTCDIR  ext4  defaults,noatime  0    0" >> /etc/fstab
+    sudo mount -a
+    echo -e $TEXT_GREEN
+    echo "Hard disk configured"
+    echo -e $TEXT_RESET
 }
 
 function hd_detect {
@@ -42,7 +52,7 @@ function hd_detect {
            read -p "$drive_size $drive will be formatted. Are you agree? " yn
            case $yn in
                [Yy]* ) DRIVE_CONF=true;break;;
-               [Nn]* ) echo "This script needs to format an entire hard disk.";exit;;
+               [Nn]* ) echo "This script needs to format an entire hard disk.";echo -e $TEXT_RESET;exit;;
                * ) echo "Please answer yes or no.";;
            esac
 	   echo -e $TEXT_RESET
@@ -66,8 +76,8 @@ while true; do
     echo -e $TEXT_YELLOW
     read -p "Will you use a pendrive for SWAP?" yn
     case $yn in
-        [Yy]* ) SWAP_CONFIG=1;break;; #If we have SWAP_CONFIG value says to configure it.
-        [Nn]* ) echo "SWAP will be set on external Hard Disk";SWAP_CONFIG=0;break;; #else we configure swap in the external hard drive.
+        [Yy]* ) SWAP_CONFIG=pen;break;; #If we have SWAP_CONFIG value says to configure it.
+        [Nn]* ) echo "SWAP will be set on external Hard Disk";SWAP_CONFIG=hd;break;; #else we configure swap in the external hard drive.
         * ) echo "Please answer yes or no.";;
     esac
     echo -e $TEXT_RESET
@@ -111,3 +121,7 @@ echo "Prerequisites installed"
 echo -e $TEXT_RESET
 
 # Configure external hard drive
+if [ "$DRIVE_CONF" = "true" ]; then
+    echo "me voy a cargar el HD"
+    #hd_conf
+fi
