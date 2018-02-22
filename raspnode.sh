@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# jochemin
+#
+#Bitcoin + Lightning node installation bash script
+#
+#Raspberry + external USB drive required, pendrive recommended
+#
+#BTC --> 
+
 # Fail on error , debug all lines
 set -eu -o pipefail
 
