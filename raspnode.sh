@@ -30,6 +30,22 @@ fi
 # Clean the screen
 clear
 
+function hd_detect {
+   drive_find="$(lsblk -dlnb | awk '$4>=193273528320' | numfmt --to=iec --field=4 | cut -c1-3)"
+   drive=$FOLD1$drive_find
+   drive_size="$(df -h $drive | sed 1d |  awk '{print $2}')"
+       while true; do
+           echo -e $TEXT_RED_B
+           read -p "$drive_size $drive will be formatted. Are you agree? " yn
+           case $yn in
+               [Yy]* ) DRIVE_CONF=true;break;;
+               [Nn]* ) echo "This script needs to format an entire hard disk.";echo -e $TEXT_RESET;exit;;
+               * ) echo "Please answer yes or no.";;
+           esac
+	   echo -e $TEXT_RESET
+       done
+}
+
 function hd_conf {
     drive=$drive"1"
     umount $drive &> /dev/null
@@ -49,22 +65,6 @@ function hd_conf {
     echo -e $TEXT_GREEN
     echo "Hard disk configured"
     echo -e $TEXT_RESET
-}
-
-function hd_detect {
-   drive_find="$(lsblk -dlnb | awk '$4>=193273528320' | numfmt --to=iec --field=4 | cut -c1-3)"
-   drive=$FOLD1$drive_find
-   drive_size="$(df -h $drive | sed 1d |  awk '{print $2}')"
-       while true; do
-           echo -e $TEXT_RED_B
-           read -p "$drive_size $drive will be formatted. Are you agree? " yn
-           case $yn in
-               [Yy]* ) DRIVE_CONF=true;break;;
-               [Nn]* ) echo "This script needs to format an entire hard disk.";echo -e $TEXT_RESET;exit;;
-               * ) echo "Please answer yes or no.";;
-           esac
-	   echo -e $TEXT_RESET
-       done
 }
 
 # Do we have an external hard drive?
