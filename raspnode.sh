@@ -1,5 +1,5 @@
+#!/bin/bash
 ##############################################################################################
-#!/bin/bash                                                                                  #
 #                                                                                            #
 # jochemin                                                                                   #
 #                                                                                            #
@@ -22,42 +22,41 @@ TEXT_GREEN='\e[0;32m'
 ##############################################################################################
 
 # variables###################################################################################
+user=$(logname)
+userhome='/home/'$user
 FOLD1='/dev/'
 ##############################################################################################
 
 # Color functions#############################################################################
-function writegreen(line){
-    echo -e @TEXT_GREEN
-    echo line
-    echo -e TEXT_RESET
+function writegreen(){
+    echo -e -n "'\e[0;32m$1"
+    echo -e -n '\033[0m\n'
 }
-function writeyellow(line){
-    echo -e @TEXT_YELLOW
-    echo line
-    echo -e TEXT_RESET
+function writeyellow(){
+    echo -e -n "'\e[0;33m$1"
+    echo -e -n '\033[0m\n'
 }
-function writered(line){
-    echo -e @TEXT_RED_B
-    echo line
-    echo -e TEXT_RESET
+function writered(){
+    echo -e -n "'\e[1;31m$1"
+    echo -e -n '\033[0m\n'
 }
 ##############################################################################################
 
 # External HD detection and prompt for format#################################################
 function hd_detect {
-   drive_find="$(lsblk -dlnb | awk '$4>=193273528320' | numfmt --to=iec --field=4 | cut -c1-3)"
-   drive=$FOLD1$drive_find
-   drive_size="$(df -h $drive | sed 1d |  awk '{print $2}')"
-       while true; do
-           echo -e $TEXT_RED_B
-           read -p "$drive_size $drive will be formatted. Are you agree? " yn
-           case $yn in
-               [Yy]* ) DRIVE_CONF=true;break;;
-               [Nn]* ) echo "This script needs to format an entire hard disk.";echo -e $TEXT_RESET;exit;;
-               * ) echo "Please answer yes or no.";;
-           esac
-     echo -e $TEXT_RESET
-       done
+    drive_find="$(lsblk -dlnb | awk '$4>=193273528320' | numfmt --to=iec --field=4 | cut -c1-3)"
+    drive=$FOLD1$drive_find
+    drive_size="$(df -h $drive | sed 1d |  awk '{print $2}')"
+    while true; do
+        echo -e $TEXT_RED_B
+        read -p "$drive_size $drive will be formatted. Are you agree? (y/n) " yn
+        case $yn in
+            [Yy]* ) DRIVE_CONF=true;break;;
+            [Nn]* ) echo "This script needs to format an entire hard disk.";echo -e $TEXT_RESET;exit;;
+            * ) echo "Please answer yes or no. (y/n)";;
+        esac
+        echo -e $TEXT_RESET
+    done
 }
 ##############################################################################################
 
@@ -65,31 +64,32 @@ function hd_detect {
 # HD configuration############################################################################
 function hd_conf {
     drive=$drive"1"
-    umount $drive &> /dev/null
-    echo -e $TEXT_YELLOW
-    echo "Formatting hard disk"
-    sudo mkfs.ext4 $drive -L BITCOIN
-    echo -e $TEXT_GREEN
-    echo "Hard disk formatted"
+    if mount | grep $drive > /dev/null;then
+        echo 'lo detecto montado'
+        umount $drive > /dev/null
+    fi
+    writeyellow 'Formatting hard disk'
+    sudo mkfs.ext4 -F $drive -L BITCOIN
+    writegreen 'Hard disk formatted'
     PARTUUID="$(blkid -o value -s PARTUUID $drive)"
-    echo  -e $TEXT_YELLOW
-    echo "Creating Bitcoin data folder"
-    BTCDIR=$HOME"/.bitcoin"
-    mkdir $BTCDIR
-    echo "Modifying fstab"
+    writeyellow 'Creating Bitcoin data folder'
+    BTCDIR='/home/'$user'/.bitcoin'
+    mkdir -p $BTCDIR
+    writeyellow 'Modifying fstab'
+    sudo sed -i".bak" "/$PARTUUID/d" /etc/fstab
     echo "PARTUUID=$PARTUUID  $BTCDIR  ext4  defaults,noatime  0    0" >> /etc/fstab
-    sudo mount -a
-    echo -e $TEXT_GREEN
-    echo "Hard disk configured"
-    echo -e $TEXT_RESET
+    if mount | grep $drive > /dev/null;then
+        :
+    else
+        sudo mount -a
+    fi
+    writegreen 'Hard disk configured'
 }
 ##############################################################################################
-
+# MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN ###
 # Check if script is launched with sudo#######################################################
 if [ "$(id -u)" -ne 0 ]; then
-    echo -e $TEXT_RED_B
-    echo "Please run this script with sudo" >&2
-    echo -e $TEXT_RESET
+    writered "Please run this script with sudo" >&2
     exit 1
 fi
 ##############################################################################################
@@ -102,11 +102,11 @@ clear
 # Do we have an external hard drive?
 while true; do
     echo -e $TEXT_YELLOW
-    read -p "Is the hard drive connected? (We assume 1 Partition)" yn
+    read -p "Is the hard drive connected? It will be formated. (y/n)" yn
     case $yn in
         [Yy]* ) hd_detect;break;; #If we have HD_CONFIG value says to configure it.
         [Nn]* ) echo "Please connect an USB hard drive an retry";exit;;
-        * ) echo "Please answer yes or no.";;
+        * ) echo "Please answer yes or no. (y/n)";;
     esac
     echo -e $TEXT_RESET
 done
@@ -124,47 +124,57 @@ while true; do
 done
 ##############################################################################################
 
-# MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN ###
-#echo -e $TEXT_GREEN
-writegreen ('Script will begin the installation, take a rest.')
-writegreen ('____________________________________________________')
-echo -e $TEXT_YELLOW
-echo "Updating Raspberry"
-echo -e $TEXT_RESET
+# Prerequisites###############################################################################
+writegreen 'Script will begin the installation, take a rest.'
+writegreen '____________________________________________________'
+writeyellow 'Updating Raspberry'
 sudo apt-get update
-echo -e $TEXT_GREEN
-echo "APT update finished..."
-echo -e $TEXT_RESET
+writegreen 'APT update finished...'
 sudo apt-get -y dist-upgrade
-echo -e $TEXT_GREEN
-echo "APT distributive upgrade finished..."
-echo -e $TEXT_RESET
+writegreen 'APT distributive upgrade finished...'
 sudo apt-get -y upgrade
-echo -e $TEXT_GREEN
-echo "APT upgrade finished..."
-echo -e $TEXT_RESET
+writegreen 'APT upgrade finished...'
 sudo apt-get -y autoremove
-echo -e $TEXT_GREEN
-echo "APT auto remove finished..."
-echo -e $TEXT_RESET
+writegreen 'APT auto remove finished...'
 
 if [ -f /var/run/reboot-required ]; then
-    echo -e $TEXT_RED_B
-    echo "Reboot required!"
-    echo -e $TEXT_RESET
+    writered 'Reboot required!'
 fi
 
-echo -e $TEXT_YELLOW
-echo "Installing prerequisites"
-echo -e $TEXT_RESET
+writeyellow 'Installing prerequisites'
 sudo apt-get install -y autoconf automake build-essential git libtool libgmp-dev libsqlite3-dev python python3 net-tools tmux
-echo -e $TEXT_GREEN
-echo "Prerequisites installed"
-echo -e $TEXT_RESET
+writegreen 'Prerequisites installed'
+##############################################################################################
 
-# Configure external hard drive
+# Configure external hard drive###############################################################
 if [ "$DRIVE_CONF" = "true" ]; then
-    echo "me voy a cargar el HD"
-    #hd_conf
+    hd_conf
 fi
+##############################################################################################
+
+# Install Berkeley-db 4.8.30##################################################################
+writeyellow 'Installing database...'
+sudo -u $user mkdir -p $userhome/bin
+cd $userhome/bin
+sudo -u $user wget http://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz
+sudo -u $user tar -xzvf db-4.8.30.NC.tar.gz
+cd db-4.8.30.NC/build_unix/
+../dist/configure --enable-cxx
+make
+sudo make install
+writegreen 'Database installed'
+##############################################################################################
+
+# Install Bitcoin Core########################################################################
+writeyellow 'Installing Bitcoin Core'
+rm -R $userhome/bin/bitcoin
+cd $userhome/bin
+git clone https://github.com/bitcoin/bitcoin.git
+cd bitcoin/
+./autogen.sh
+./configure CPPFLAGS="-I/usr/local/BerkeleyDB.4.8/include -O2" LDFLAGS="-L/usr/local/BerkeleyDB.4.8/lib" --enable-upnp-default
+make
+sudo make install
+writegreen 'Bitcoin Core Installed'
+##############################################################################################
 # MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN ###
