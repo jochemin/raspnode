@@ -1,35 +1,49 @@
-#!/bin/bash
+##############################################################################################
+#!/bin/bash                                                                                  #
+#                                                                                            #
+# jochemin                                                                                   #
+#                                                                                            #
+#Bitcoin + Lightning node installation bash script                                           #
+#                                                                                            #
+#Raspberry + external USB drive required, pendrive recommended                               #
+#                                                                                            #
+#BTC Donations. Thank you!! --> 3FM6FypcrSVhdHh7cpVQMrhPXPZ6zcXeYU                           #
+##############################################################################################
 
-# jochemin
-#
-#Bitcoin + Lightning node installation bash script
-#
-#Raspberry + external USB drive required, pendrive recommended
-#
-#BTC --> 
-
-# Fail on error , debug all lines
+# Fail on error , debug all lines#############################################################
 set -eu -o pipefail
+##############################################################################################
 
-# Some color for text
+# Some color for text#########################################################################
 TEXT_RESET='\e[0m'
 TEXT_YELLOW='\e[0;33m'
 TEXT_RED_B='\e[1;31m'
 TEXT_GREEN='\e[0;32m'
+##############################################################################################
 
+# variables###################################################################################
 FOLD1='/dev/'
+##############################################################################################
 
-# Check if script has privileges
-if [ "$(id -u)" -ne 0 ]; then
-    echo -e $TEXT_RED_B
-    echo "Please run this script with sudo" >&2
-    echo -e $TEXT_RESET
-    exit 1
-fi
+# Color functions#############################################################################
+function writegreen(line){
+    echo -e @TEXT_GREEN
+    echo line
+    echo -e TEXT_RESET
+}
+function writeyellow(line){
+    echo -e @TEXT_YELLOW
+    echo line
+    echo -e TEXT_RESET
+}
+function writered(line){
+    echo -e @TEXT_RED_B
+    echo line
+    echo -e TEXT_RESET
+}
+##############################################################################################
 
-# Clean the screen
-clear
-
+# External HD detection and prompt for format#################################################
 function hd_detect {
    drive_find="$(lsblk -dlnb | awk '$4>=193273528320' | numfmt --to=iec --field=4 | cut -c1-3)"
    drive=$FOLD1$drive_find
@@ -42,10 +56,13 @@ function hd_detect {
                [Nn]* ) echo "This script needs to format an entire hard disk.";echo -e $TEXT_RESET;exit;;
                * ) echo "Please answer yes or no.";;
            esac
-	   echo -e $TEXT_RESET
+     echo -e $TEXT_RESET
        done
 }
+##############################################################################################
 
+
+# HD configuration############################################################################
 function hd_conf {
     drive=$drive"1"
     umount $drive &> /dev/null
@@ -66,7 +83,22 @@ function hd_conf {
     echo "Hard disk configured"
     echo -e $TEXT_RESET
 }
+##############################################################################################
 
+# Check if script is launched with sudo#######################################################
+if [ "$(id -u)" -ne 0 ]; then
+    echo -e $TEXT_RED_B
+    echo "Please run this script with sudo" >&2
+    echo -e $TEXT_RESET
+    exit 1
+fi
+##############################################################################################
+
+# Clean the screen############################################################################
+clear
+##############################################################################################
+
+# User input##################################################################################
 # Do we have an external hard drive?
 while true; do
     echo -e $TEXT_YELLOW
@@ -90,10 +122,12 @@ while true; do
     esac
     echo -e $TEXT_RESET
 done
+##############################################################################################
 
-echo -e $TEXT_GREEN
-echo "Script will begin the installation, take a rest."
-echo "____________________________________________________"
+# MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN ###
+#echo -e $TEXT_GREEN
+writegreen ('Script will begin the installation, take a rest.')
+writegreen ('____________________________________________________')
 echo -e $TEXT_YELLOW
 echo "Updating Raspberry"
 echo -e $TEXT_RESET
@@ -133,3 +167,4 @@ if [ "$DRIVE_CONF" = "true" ]; then
     echo "me voy a cargar el HD"
     #hd_conf
 fi
+# MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN - MAIN ###
