@@ -1,5 +1,5 @@
 # raspnode
-Bitcoin Core + LND 0.14 Beta (mainnet) installer. 
+Bitcoin Core + LND 0.4 Beta (mainnet) installer. 
 
 To install, just clone this git or download raspnode.sh and run with sudo. 
 
