@@ -191,9 +191,9 @@ function build_bitcoinconf {
     echo 'zmqpubrawtx=tcp://127.0.0.1:18501' >> /home/$user/.bitcoin/bitcoin.conf
     echo "rpcuser=$rpcuser" >> /home/$user/.bitcoin/bitcoin.conf
     echo "rpcpassword=$rpcpass" >> /home/$user/.bitcoin/bitcoin.conf
-    echo 'bcache=100' >> /home/$user/.bitcoin/bitcoin.conf
+    echo 'dbcache=100' >> /home/$user/.bitcoin/bitcoin.conf
     echo 'maxmempool=100' >> /home/$user/.bitcoin/bitcoin.conf
-    echo 'userhd=1' >> /home/$user/.bitcoin/bitcoin.conf
+    echo 'usehd=1' >> /home/$user/.bitcoin/bitcoin.conf
     echo 'txindex=1' >> /home/$user/.bitcoin/bitcoin.conf
     echo 'daemon=1' >> /home/$user/.bitcoin/bitcoin.conf
     echo 'server=1' >> /home/$user/.bitcoin/bitcoin.conf
