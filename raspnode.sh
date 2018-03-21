@@ -175,7 +175,7 @@ function install_bitcoin_core {
     writeyellow 'Installing Bitcoin Core'
     rm -fR $userhome/bin/bitcoin
     cd $userhome/bin
-    git clone https://github.com/bitcoin/bitcoin.git
+    git clone -b 0.16 https://github.com/bitcoin/bitcoin.git
     cd bitcoin/
     ./autogen.sh
     ./configure CPPFLAGS="-I/usr/local/BerkeleyDB.4.8/include -O2" LDFLAGS="-L/usr/local/BerkeleyDB.4.8/lib" --enable-upnp-default
