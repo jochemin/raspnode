@@ -1,14 +1,16 @@
 #!/bin/bash
 ##############################################################################################
-#                                                                                            
-# jochemin                                                                                   
-#                                                                                            
-#Bitcoin + Lightning node installation bash script                                           
-#                                                                                            
-#Raspberry + external USB drive required, pendrive recommended                               
-#                                             lnbc10u1pdtyqucpp52fu993pgr4vx8kw7un53wc6nr2v979ca53wsr7swkaxaxewgep6qdqlgysxyet9wgsxvmmjyp4x7cmgv4kkjmscqzysxq92ptxs5jyam5u65rlfhrls2khe60lt93m2zyv06tzjkxt9u6l50jy63v7xu4pqah2kr3kljmhq8zyeaw02t3vcygde4nglm48fruk6x4lmf8gqueegmf                                               
-#BTC Donations. Thank you!! --> 3FM6FypcrSVhdHh7cpVQMrhPXPZ6zcXeYU                           
-#LN 1000 satoshi --> 
+#
+# jochemin
+#
+#Bitcoin + Lightning node installation bash script
+#
+#Raspberry + external USB drive required, pendrive recommended
+#
+#BTC Donations. Thank you!! --> 3FM6FypcrSVhdHh7cpVQMrhPXPZ6zcXeYU
+#
+#LN 1000 satoshi --> lnbc10u1pdtyqucpp52fu993pgr4vx8kw7un53wc6nr2v979ca53wsr7swkaxaxewgep6qdqlgysxyet9wgsxvmmjyp4x7cmgv4kkjmscqzysxq92ptxs5jyam5u65rlfhrls2khe60lt93m2zyv06tzjkxt9u6l50jy63v7xu4pqah2kr3kljmhq8zyeaw02t3vcygde4nglm48fruk6x4lmf8gqueegmf
+#
 #Connect to my LN node --> 02d249db09237f974f1c67775accee37a9d1eb3f04f236dda177f5a5c083094f15@jocheminlnd1.ddns.net:9735
 ##############################################################################################
 
@@ -20,7 +22,7 @@ set -eu -o pipefail
 TEXT_RESET='\e[0m'
 TEXT_YELLOW='\e[0;33m'
 TEXT_RED_B='\e[1;31m'
-TEXT_GREEN='\e[0;32m'
+#TEXT_GREEN='\e[0;32m'
 ##############################################################################################
 
 # variables###################################################################################
@@ -49,16 +51,16 @@ function writered(){
 function hd_detect {
     drive_find="$(lsblk -dlnb | awk '$4>=193273528320' | numfmt --to=iec --field=4 | cut -c1-3)"
     drive=$FOLD1$drive_find
-    drive_size="$(df -h $drive | sed 1d |  awk '{print $2}')"
+    drive_size="$(df -h "$drive" | sed 1d |  awk '{print $2}')"
     while true; do
-        echo -e $TEXT_RED_B
+        echo -e "$TEXT_RED_B"
         read -p "$drive_size $drive will be formatted. Are you agree? (y/n) " yn
         case $yn in
             [Yy]* ) DRIVE_CONF=true;break;;
-            [Nn]* ) echo "This script needs to format an entire hard disk.";echo -e $TEXT_RESET;exit;;
+            [Nn]* ) echo "This script needs to format an entire hard disk.";echo -e "$TEXT_RESET";exit;;
             * ) echo "Please answer yes or no. (y/n)";;
         esac
-        echo -e $TEXT_RESET
+        echo -e "$TEXT_RESET"
     done
 }
 ##############################################################################################
@@ -67,25 +69,25 @@ function hd_detect {
 # HD configuration############################################################################
 function hd_conf {
     drive=$drive"1"
-    if mount | grep $drive > /dev/null;then
-        umount -l $drive > /dev/null
+    if mount | grep "$drive" > /dev/null;then
+        umount -l "$drive" > /dev/null
     fi
     writeyellow 'Formatting hard disk'
-    sudo mkfs.ext4 -F $drive -L BITCOIN
+    sudo mkfs.ext4 -F "$drive" -L BITCOIN
     writegreen 'Hard disk formatted'
-    PARTUUID="$(blkid -o value -s PARTUUID $drive)"
+    PARTUUID="$(blkid -o value -s PARTUUID "$drive")"
     writeyellow 'Creating Bitcoin data folder'
     BTCDIR='/home/'$user'/.bitcoin'
-    mkdir -p $BTCDIR
+    mkdir -p "$BTCDIR"
     writeyellow 'Modifying fstab'
     sudo sed -i".bak" "/$PARTUUID/d" /etc/fstab
     echo "PARTUUID=$PARTUUID  $BTCDIR  ext4  defaults,noatime  0    0" >> /etc/fstab
-    if mount | grep $drive > /dev/null;then
+    if mount | grep "$drive" > /dev/null;then
         :
     else
         sudo mount -a
     fi
-    sudo chmod 777 $BTCDIR
+    sudo chmod 777 "$BTCDIR"
     writegreen 'Hard disk configured'
 }
 ##############################################################################################
@@ -93,15 +95,15 @@ function hd_conf {
 # CONFIGURE SWAP IN THE HARD DRIVE############################################################
 function swap_conf {
     writeyellow 'Configuring swap in the hard drive'
-    sudo -u $user mkdir -p /home/$user/.bitcoin/swap
-    dd if=/dev/zero of=/home/$user/.bitcoin/swap/swap.file bs=1M count=2148
-    chmod 600 /home/$user/.bitcoin/swap/swap.file
+    sudo -u "$user" mkdir -p /home/"$user"/.bitcoin/swap
+    dd if=/dev/zero of=/home/"$user"/.bitcoin/swap/swap.file bs=1M count=2148
+    chmod 600 /home/"$user"/.bitcoin/swap/swap.file
     sudo sed -i".bak" "/CONF_SWAPFILE/d" /etc/dphys-swapfile
     sudo sed -i".bak" "/CONF_SWAPSIZE/d" /etc/dphys-swapfile
     echo "CONF_SWAPFILE=/home/$user/.bitcoin/swap/swap.file" >> /etc/dphys-swapfile
     echo "CONF_SWAPSIZE=2048" >> /etc/dphys-swapfile
-    mkswap /home/$user/.bitcoin/swap/swap.file
-    swapon /home/$user/.bitcoin/swap/swap.file
+    mkswap /home/"$user"/.bitcoin/swap/swap.file
+    swapon /home/"$user"/.bitcoin/swap/swap.file
     echo "/home/$user/.bitcoin/swap/swap.file  none  swap  defaults  0    0" >> /etc/fstab
     writegreen 'swap configured'
 }
@@ -109,7 +111,7 @@ function swap_conf {
 function user_input {
     # Do we have an external hard drive?
     while true; do
-        echo -e $TEXT_YELLOW
+        echo -e "$TEXT_YELLOW"
         read -p "Is the hard drive connected? It will be formated. (y/n)" yn
         case $yn in
             [Yy]* ) hd_detect;break;; #If we have HD_CONFIG value says to configure it.
@@ -122,7 +124,7 @@ function user_input {
     read -s -p 'Insert password: (will not be shown) ' rpcpass
     echo 
     read -p 'Insert your LND node alias: ' LNALIAS
-    echo -e $TEXT_RESET
+    echo -e "$TEXT_RESET"
     # Do we have a pendrive for SWAP? IMPROVEMENT?
     #while true; do
     #    echo -e $TEXT_YELLOW
@@ -158,10 +160,10 @@ function update_rasp {
 # INSTALL BERKELEY (4.8.30)###################################################################
 function install_berkeley {
     writeyellow 'Installing database...'
-    sudo -u $user mkdir -p $userhome/bin
-    cd $userhome/bin
-    sudo -u $user wget http://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz
-    sudo -u $user tar -xzvf db-4.8.30.NC.tar.gz
+    sudo -u "$user" mkdir -p "$userhome"/bin
+    cd "$userhome"/bin
+    sudo -u "$user" wget http://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz
+    sudo -u "$user" tar -xzvf db-4.8.30.NC.tar.gz
     cd db-4.8.30.NC/build_unix/
     ../dist/configure --enable-cxx
     make
@@ -173,8 +175,8 @@ function install_berkeley {
 # INSTALL BITCOIN CORE #######################################################################
 function install_bitcoin_core {
     writeyellow 'Installing Bitcoin Core'
-    rm -fR $userhome/bin/bitcoin
-    cd $userhome/bin
+    rm -fR "$userhome"/bin/bitcoin
+    cd "$userhome"/bin
     git clone -b 0.16 https://github.com/bitcoin/bitcoin.git
     cd bitcoin/
     ./autogen.sh
@@ -187,24 +189,24 @@ function install_bitcoin_core {
 
 # BUILD BITCOIN.CONF##########################################################################
 function build_bitcoinconf {
-    echo 'zmqpubrawblock=tcp://127.0.0.1:18501' > /home/$user/.bitcoin/bitcoin.conf
-    echo 'zmqpubrawtx=tcp://127.0.0.1:18501' >> /home/$user/.bitcoin/bitcoin.conf
-    echo "rpcuser=$rpcuser" >> /home/$user/.bitcoin/bitcoin.conf
-    echo "rpcpassword=$rpcpass" >> /home/$user/.bitcoin/bitcoin.conf
-    echo 'dbcache=100' >> /home/$user/.bitcoin/bitcoin.conf
-    echo 'maxmempool=100' >> /home/$user/.bitcoin/bitcoin.conf
-    echo 'usehd=1' >> /home/$user/.bitcoin/bitcoin.conf
-    echo 'txindex=1' >> /home/$user/.bitcoin/bitcoin.conf
-    echo 'daemon=1' >> /home/$user/.bitcoin/bitcoin.conf
-    echo 'server=1' >> /home/$user/.bitcoin/bitcoin.conf
+    echo 'zmqpubrawblock=tcp://127.0.0.1:18501' > /home/"$user"/.bitcoin/bitcoin.conf
+    echo 'zmqpubrawtx=tcp://127.0.0.1:18501' >> /home/"$user"/.bitcoin/bitcoin.conf
+    echo "rpcuser=$rpcuser" >> /home/"$user"/.bitcoin/bitcoin.conf
+    echo "rpcpassword=$rpcpass" >> /home/"$user"/.bitcoin/bitcoin.conf
+    echo 'dbcache=100' >> /home/"$user"/.bitcoin/bitcoin.conf
+    echo 'maxmempool=100' >> /home/"$user"/.bitcoin/bitcoin.conf
+    echo 'usehd=1' >> /home/"$user"/.bitcoin/bitcoin.conf
+    echo 'txindex=1' >> /home/"$user"/.bitcoin/bitcoin.conf
+    echo 'daemon=1' >> /home/"$user"/.bitcoin/bitcoin.conf
+    echo 'server=1' >> /home/"$user"/.bitcoin/bitcoin.conf
 }
 ##############################################################################################
 
 # INSTALL LND#################################################################################
 function install_lnd {
     writeyellow 'Installing LND 0.4 BETA'
-    cd $userhome
-    sudo -u $user mkdir -p download
+    cd "$userhome"
+    sudo -u "$user" mkdir -p download
     cd download
     wget https://github.com/lightningnetwork/lnd/releases/download/v0.4-beta/lnd-linux-arm-v0.4-beta.tar.gz
     tar -xzf lnd-linux-arm-v0.4-beta.tar.gz
@@ -214,15 +216,15 @@ function install_lnd {
 
 # BUILD LND CONFIG FILE#######################################################################
 function build_lndconf {
-    sudo -u $user mkdir -p $userhome/.lnd
-    echo 'bitcoin.active=1' > $userhome/.lnd/lnd.conf
-    echo "externalip=$PUBLICIP" >> $userhome/.lnd/lnd.conf
-    echo "alias=$LNALIAS" >> $userhome/.lnd/lnd.conf
-    echo 'color=#1d8c09' >> $userhome/.lnd/lnd.conf
-    echo 'bitcoin.node=bitcoind' >> $userhome/.lnd/lnd.conf
-    echo "bitcoind.rpcuser=$rpcuser" >> $userhome/.lnd/lnd.conf
-    echo "bitcoind.rpcpass=$rpcpass" >> $userhome/.lnd/lnd.conf
-    echo 'bitcoind.zmqpath=tcp://127.0.0.1:18501' >> $userhome/.lnd/lnd.conf
+    sudo -u "$user" mkdir -p "$userhome"/.lnd
+    echo 'bitcoin.active=1' > "$userhome"/.lnd/lnd.conf
+    echo "externalip=$PUBLICIP" >> "$userhome"/.lnd/lnd.conf
+    echo "alias=$LNALIAS" >> "$userhome"/.lnd/lnd.conf
+    echo 'color=#1d8c09' >> "$userhome"/.lnd/lnd.conf
+    echo 'bitcoin.node=bitcoind' >> "$userhome"/.lnd/lnd.conf
+    echo "bitcoind.rpcuser=$rpcuser" >> "$userhome"/.lnd/lnd.conf
+    echo "bitcoind.rpcpass=$rpcpass" >> "$userhome"/.lnd/lnd.conf
+    echo 'bitcoind.zmqpath=tcp://127.0.0.1:18501' >> "$userhome"/.lnd/lnd.conf
     #autopilot.active=1 >> $userhome/.lnd/lnd.conf
     #autopilot.maxchannels=5 >> $userhome/.lnd/lnd.conf
     #autopilot.allocation=0.6 >> $userhome/.lnd/lnd.conf
@@ -281,7 +283,7 @@ build_lndconf
 
 # START BITCOIND##############################################################################
 writeyellow 'Starting Bitcoin Core'
-sudo -u $user bitcoind &
+sudo -u "$user" bitcoind &
 writegreen 'Bitcoin Core started'
 ##############################################################################################
 
@@ -289,8 +291,8 @@ writegreen 'Bitcoin Core started'
 # Wait 20 minutes for bitcoind to warm up
 writeyellow 'Waiting 20 minutes to start LND'
 sleep 20m
-sudo -u $user tmux new-session -d -s LND
-sudo -u $user tmux send-keys -t LND "lnd --bitcoin.mainnet" Enter
+sudo -u "$user" tmux new-session -d -s LND
+sudo -u "$user" tmux send-keys -t LND "lnd --bitcoin.mainnet" Enter
 writegreen 'LND started in tmux session'
 ##############################################################################################
 
