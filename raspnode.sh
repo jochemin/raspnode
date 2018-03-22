@@ -75,13 +75,13 @@ function hd_conf {
     writeyellow 'Formatting hard disk'
     sudo mkfs.ext4 -F "$drive" -L BITCOIN
     writegreen 'Hard disk formatted'
-    PARTUUID="$(blkid -o value -s PARTUUID "$drive")"
+    UUID="$(blkid -o value -s UUID "$drive")"
     writeyellow 'Creating Bitcoin data folder'
     BTCDIR='/home/'$user'/.bitcoin'
     mkdir -p "$BTCDIR"
     writeyellow 'Modifying fstab'
-    sudo sed -i".bak" "/$PARTUUID/d" /etc/fstab
-    echo "PARTUUID=$PARTUUID  $BTCDIR  ext4  defaults,noatime  0    0" >> /etc/fstab
+    sudo sed -i".bak" "/$UUID/d" /etc/fstab
+    echo "UUID=$UUID  $BTCDIR  ext4  defaults,noatime  0    0" >> /etc/fstab
     if mount | grep "$drive" > /dev/null;then
         :
     else
