@@ -3,6 +3,8 @@ Bitcoin Core + LND 0.4 Beta (mainnet) installer.
 
 To install, just clone this git or download raspnode.sh and run with sudo. 
 
+If you have installed and only want to secure your Raspberry launch with secure parameter --> sudo ./raspnode.sh secure
+
 If I've helped you, consider donating some BTC to 3FM6FypcrSVhdHh7cpVQMrhPXPZ6zcXeYU
 
 And if you want to donate via LN you can send me 1000 satoshi -->
