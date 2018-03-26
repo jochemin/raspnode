@@ -54,7 +54,7 @@ function hd_detect {
     drive_size="$(df -h "$drive" | sed 1d |  awk '{print $2}')"
     while true; do
         echo -e "$TEXT_RED_B"
-        read -p "$drive_size $drive will be formatted. Are you agree? (y/n) " yn
+        read -p "$drive_size $drive will be formatted. Do you agree? (y/n) " yn
         case $yn in
             [Yy]* ) DRIVE_CONF=true;break;;
             [Nn]* ) echo "This script needs to format an entire hard disk.";echo -e "$TEXT_RESET";exit;;
@@ -138,6 +138,37 @@ function user_input {
     #done
 }
 ##############################################################################################
+
+# NETWORK ADDRESS ############################################################################
+function Network {
+    network_address=$(ip -o -f inet addr show | awk '/scope global/{sub(/[^.]+\//,"0/",$4);print $4}')
+}
+##############################################################################################
+
+# SECURE RASPBERRY ###########################################################################
+function secure {
+    Network
+    writeyellow 'Configuring iptables'
+    iptables -A INPUT -s "$network_address" -j ACCEPT
+    writegreen 'All trafic from LAN allowed'
+    iptables -A INPUT -p tcp --syn -m connlimit --connlimit-above 250 --connlimit-mask 0 -j DROP
+    writegreen 'Limited total incoming connections to 250'
+    iptables -A INPUT -p tcp --syn --dport 22 -m connlimit --connlimit-above 2 --connlimit-mask 0 -j DROP
+    writegreen 'Limited SSH connections to port 22 to 2'
+    iptables -A INPUT -p tcp --syn --dport 8333 -m connlimit --connlimit-above 120 --connlimit-mask 0 -j DROP
+    writegreen 'Limited total connections to port 8333 (Bitcoin Mainnet) to 120'
+    iptables -A INPUT -p tcp --syn --dport 9735 -m connlimit --connlimit-above 120 --connlimit-mask 0 -j DROP
+    writegreen 'Limited total connections to port 9735 (Lightning Network) to 120'
+    iptables -I INPUT -p tcp --syn --dport 8333 -m connlimit --connlimit-above 6 -j REJECT
+    writegreen 'Limited to 6 connections from one IP to port 8333'
+    iptables -I INPUT -p tcp --syn --dport 9735 -m connlimit --connlimit-above 6 -j REJECT
+    writegreen 'Limited to 6 connections from one IP to port 9735'
+    iptables-save > /etc/iptables.conf
+    sed -i".bak" '/exit/d' /etc/rc.local
+    echo 'iptables-restore < /etc/iptables.conf' >> /etc/rc.local
+    echo 'exit 0' >> /etc/rc.local
+    writegreen 'Rules saved'
+}
 
 # UPDATE RASPBERRY ###########################################################################
 function update_rasp {
@@ -249,6 +280,12 @@ fi
 clear
 ##############################################################################################
 
+# Check parameters ###########################################################################
+if [ $1 = "secure" ];then
+    secure;exit 1
+fi
+##############################################################################################
+
 # User input##################################################################################
 user_input
 ##############################################################################################
@@ -258,6 +295,7 @@ writegreen 'Script will begin the installation, take a rest.'
 writegreen '____________________________________________________'
 update_rasp
 install_prerequisites
+secure
 ##############################################################################################
 
 # Configure external hard drive###############################################################
