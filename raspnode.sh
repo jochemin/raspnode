@@ -51,7 +51,7 @@ function writered(){
 function hd_detect {
     drive_find="$(lsblk -dlnb | awk '$4>=193273528320' | numfmt --to=iec --field=4 | cut -c1-3)"
     drive=$FOLD1$drive_find
-    drive_size="$(df -h "$drive" | sed 1d |  awk '{print $2}')"
+    drive_size="$(df -h "$drive"1 | sed 1d |  awk '{print $2}')"
     while true; do
         echo -e "$TEXT_RED_B"
         read -p "$drive_size $drive will be formatted. Do you agree? (y/n) " yn
